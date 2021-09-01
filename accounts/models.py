@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
+from django.db.models import query
 # from tickets.models import Ticket
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -31,7 +32,8 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     email       =   models.EmailField(verbose_name="email", max_length=100, unique=True)
-    name    =   models.CharField(max_length=30, blank=True)
+    first_name    =   models.CharField(max_length=30, blank=True)
+    last_name    =   models.CharField(max_length=30, blank=True)
     is_admin    =   models.BooleanField(default=False)
     is_active   =   models.BooleanField(default=True) 
     is_staff    =   models.BooleanField(default=False)
