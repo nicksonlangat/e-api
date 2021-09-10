@@ -4,11 +4,13 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db.models import query
 # from tickets.models import Ticket
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email,first_name,last_name, password=None):
         if not email:
             raise ValueError("User must have email address")
         user    =   self.model(
             email = self.normalize_email(email),
+            first_name=first_name,
+            last_name=last_name
         )
 
         user.set_password(password)

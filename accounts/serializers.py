@@ -1,43 +1,50 @@
-from .models import User
+from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
+from django.contrib.auth.models import BaseUserManager
+from rest_framework.authtoken.models import Token
 from rest_framework import serializers
-from django.contrib.auth import get_user_model 
 
-UserModel = get_user_model()
-
-
-class UsersSerializer(serializers.ModelSerializer):
-
-    password = serializers.CharField(write_only=True)
-
-    def create(self, validated_data):
-
-        user = UserModel.objects.create_user(
-            email=validated_data['username'],
-            password=validated_data['password'],
-        )
-
-        return user
-
-    class Meta:
-        model = UserModel
-        fields = ( "id", "email", "password", )
-
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id','password', 'email', 'first_name', 'last_name')
-        write_only_fields = ('password',)
-        read_only_fields = ('id',)
+        fields = ('id','email','first_name','last_name')
 
-    def create(self, validated_data):
-        user = User.objects.create(
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
+class UserRegisterSerializer(serializers.ModelSerializer):
+    """
+    A user serializer for registering the user
+    """
+    class Meta:
+        model = User
+        fields = ('email','email','first_name','last_name','password')
 
-        user.set_password(validated_data['password'])
-        user.save()
+    def validate_email(self, email):
+        user = User.objects.filter(email=email)
+        if user:
+            raise serializers.ValidationError("Email is already taken")
+        return BaseUserManager.normalize_email(email)
 
-        return user
+    def validate_password(self, value):
+        password_validation.validate_password(value)
+        return value
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.CharField(max_length=300, required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+class AuthUserSerializer(serializers.ModelSerializer):
+    auth_token = serializers.SerializerMethodField()
+    class Meta:
+         model = User
+         fields = ('id','email','first_name','last_name', 'auth_token')
+         read_only_fields = ('id',)
+    
+    def get_auth_token(self, obj):
+        token = Token.objects.filter(user=obj)
+        token.delete()
+        token = Token.objects.create(user=obj)
+        return token.key
+
+class EmptySerializer(serializers.Serializer):
+    pass
